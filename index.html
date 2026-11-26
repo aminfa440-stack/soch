@@ -3529,7 +3529,7 @@ var MO_FONTS=[
 ];
 
 var RT=/[؀-ۿ]/,R={'9:16':[720,1280],'1:1':[720,720],'4:5':[720,900]};
-var S={i:0,text:'دلت را به روزهای خوب گرم کن\nآفتاب همیشه پشت ابر است',sig:'',ratio:'9:16',speed:1,fscale:1,dur:0,wm:1,font:''};
+var S={i:0,text:'متن مورد نظر خود را بنویسید!',sig:'',ratio:'9:16',speed:1,fscale:1,dur:0,wm:1,font:''};
 try{Object.assign(S,JSON.parse(localStorage.getItem('mo_v2')||'{}'))}catch(e){}
 if(S.i>=T.length)S.i=0;
 if(!S.fscale)S.fscale=1;
@@ -3719,7 +3719,7 @@ function frame(t){
  x.globalAlpha=1;
  if(q[10]==='frame_vintage')drawVintageFrame(q);
  var vg=x.createRadialGradient(W/2,H/2,W*.45,W/2,H/2,H*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');x.fillStyle=vg;x.fillRect(0,0,W,H);
- if(S.wm){x.globalAlpha=.55;x.fillStyle=q[3];x.font='600 '+Math.round(W*.03)+'px Vazirmatn,sans-serif';x.fillText('استوریو',W/2,H-42);x.globalAlpha=1}
+ if(S.wm){x.globalAlpha=.55;x.fillStyle=q[3];x.font='600 '+Math.round(W*.03)+'px Vazirmatn,sans-serif';x.fillText('storyou_application',W/2,H-42);x.globalAlpha=1}
 }
 
 /* ---------- حلقهٔ پخش ---------- */
