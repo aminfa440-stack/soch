@@ -1056,6 +1056,7 @@ body{font-weight:400;letter-spacing:0}
       this._t = setTimeout(() => toast.classList.remove('show'), 2000);
     }
   };
+  window.Toast = Toast; // تا showToast و بقیه‌ی اسکریپت‌ها بتوانند اعلان را نشان بدهند
 
   const Auth = {
     name: 'کاربر استوریو',
@@ -2970,26 +2971,61 @@ function changeBgColor(){
 }
 
 function copyCanvasImage(){
-  canvas.toBlob(function(blob){
-    const reader = new FileReader();
-    reader.onloadend = function(){
-      var nm = 'storyou_' + Date.now() + '.png';
-      if(typeof Android !== 'undefined' && Android.saveImage){
-        try{ Android.saveImage(String(reader.result).split(',')[1], nm, 'image/png'); showToast('در حال ذخیره تصویر…'); }
-        catch(e){ showToast('ذخیره تصویر ناموفق بود'); }
-      }
-      else if(typeof Android !== 'undefined' && Android.copyImage) Android.copyImage(reader.result);
-      else showToast("تصویر کپی شد!");
-    };
-    reader.readAsDataURL(blob);
-  }, "image/png");
+  var dataUrl;
+  try { dataUrl = canvas.toDataURL('image/png'); }
+  catch(e){ showToast('ساخت تصویر ناموفق بود'); return; }
+  var A = window.Android;
+  var nm = 'storyou_' + Date.now() + '.png';
+  var finished = false, timer = null;
+
+  function useNative(){
+    if (finished) return;
+    if (A && A.copyImage) {
+      try { A.copyImage(dataUrl); finished = true; showToast('تصویر کپی شد!'); return; } catch(e){}
+    }
+    if (A && A.saveImage) {
+      try { A.saveImage(dataUrl.split(',')[1], nm, 'image/png'); finished = true; showToast('در حال ذخیره تصویر…'); return; } catch(e){}
+    }
+    finished = true;
+    webDownload(nm);
+  }
+
+  // ۱) کلیپ‌بورد وب (همان مسیری که بدون پل اندروید کار می‌کرد)
+  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+    timer = setTimeout(useNative, 1500);          // اگر جواب نیامد، مسیر اندروید
+    try {
+      canvas.toBlob(function(blob){
+        if (!blob) { clearTimeout(timer); useNative(); return; }
+        navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(
+          function(){ clearTimeout(timer); if (!finished) { finished = true; showToast('تصویر کپی شد!'); } },
+          function(){ clearTimeout(timer); useNative(); }
+        );
+      }, 'image/png');
+    } catch(e){ clearTimeout(timer); useNative(); }
+  } else {
+    // ۲) متدهای اندروید
+    useNative();
+  }
+}
+function webDownload(nm){
+  try {
+    canvas.toBlob(function(blob){
+      if(!blob){ showToast('کپی تصویر در این محیط ممکن نیست'); return; }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nm;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      showToast('تصویر ذخیره شد');
+    }, 'image/png');
+  } catch(e){ showToast('کپی تصویر در این محیط ممکن نیست'); }
 }
 function copySuccess(){ showToast("تصویر کپی شد!"); }
 window.onImageSaved = function(ok){ showToast(ok ? 'تصویر در گالری ذخیره شد ✓' : 'ذخیره تصویر ناموفق بود'); };
 
 // پیام‌ها با همان Toast اپ اصلی نمایش داده می‌شوند
 function showToast(msg){
-  if(window.Toast && Toast.show) Toast.show(msg);
+  try { if (window.Toast && window.Toast.show) window.Toast.show(msg); } catch(e){}
 }
 
 /* ================= GESTURES: drag / pinch / rotate ================= */
