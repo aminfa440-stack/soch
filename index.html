@@ -1056,7 +1056,6 @@ body{font-weight:400;letter-spacing:0}
       this._t = setTimeout(() => toast.classList.remove('show'), 2000);
     }
   };
-  window.Toast = Toast; // تا showToast و بقیه‌ی اسکریپت‌ها بتوانند اعلان را نشان بدهند
 
   const Auth = {
     name: 'کاربر استوریو',
@@ -2971,56 +2970,26 @@ function changeBgColor(){
 }
 
 function copyCanvasImage(){
-  var dataUrl;
-  try { dataUrl = canvas.toDataURL('image/png'); }
-  catch(e){ showToast('ساخت تصویر ناموفق بود'); return; }
-  var A = window.Android;
-  var nm = 'storyou_' + Date.now() + '.png';
-
-  // ۱) مسیر اصلی و تست‌شده در اپ: کپی در کلیپ‌بورد از طریق اندروید
-  if (A && A.copyImage) {
-    try { A.copyImage(dataUrl); showToast('تصویر کپی شد!'); return; }
-    catch(e){}
-  }
-  // ۲) اگر متد کپی نبود، ذخیره در گالری
-  if (A && A.saveImage) {
-    try { A.saveImage(dataUrl.split(',')[1], nm, 'image/png'); showToast('در حال ذخیره تصویر…'); return; }
-    catch(e){}
-  }
-  // ۳) مرورگر معمولی: کلیپ‌بورد وب، و اگر نشد دانلود
-  webCopyImage(nm);
-}
-function webCopyImage(nm){
-  var failMsg = 'کپی تصویر در این محیط ممکن نیست';
-  try {
-    canvas.toBlob(function(blob){
-      if(!blob){ showToast(failMsg); return; }
-      if(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem){
-        navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
-          .then(function(){ showToast('تصویر کپی شد!'); },
-                function(){ webDownloadBlob(blob, nm, failMsg); });
-      } else {
-        webDownloadBlob(blob, nm, failMsg);
+  canvas.toBlob(function(blob){
+    const reader = new FileReader();
+    reader.onloadend = function(){
+      var nm = 'storyou_' + Date.now() + '.png';
+      if(typeof Android !== 'undefined' && Android.saveImage){
+        try{ Android.saveImage(String(reader.result).split(',')[1], nm, 'image/png'); showToast('در حال ذخیره تصویر…'); }
+        catch(e){ showToast('ذخیره تصویر ناموفق بود'); }
       }
-    }, 'image/png');
-  } catch(e){ showToast(failMsg); }
-}
-function webDownloadBlob(blob, nm, failMsg){
-  try {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = nm;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-    showToast('تصویر ذخیره شد');
-  } catch(e){ showToast(failMsg); }
+      else if(typeof Android !== 'undefined' && Android.copyImage) Android.copyImage(reader.result);
+      else showToast("تصویر کپی شد!");
+    };
+    reader.readAsDataURL(blob);
+  }, "image/png");
 }
 function copySuccess(){ showToast("تصویر کپی شد!"); }
 window.onImageSaved = function(ok){ showToast(ok ? 'تصویر در گالری ذخیره شد ✓' : 'ذخیره تصویر ناموفق بود'); };
 
 // پیام‌ها با همان Toast اپ اصلی نمایش داده می‌شوند
 function showToast(msg){
-  try { if (window.Toast && window.Toast.show) window.Toast.show(msg); } catch(e){}
+  if(window.Toast && Toast.show) Toast.show(msg);
 }
 
 /* ================= GESTURES: drag / pinch / rotate ================= */
