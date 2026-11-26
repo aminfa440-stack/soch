@@ -1033,18 +1033,62 @@ body{font-weight:400;letter-spacing:0}
 
   const ReservedStudioData = { storyFonts: [], backgrounds: [], stickers: [], about: { version: "12.0" } };
 
+  const _pageStack = ['home'];
   const Nav = {
-    to(targetId, btn = null) {
+    to(targetId, btn = null, fromBack = false) {
+      const appEl = document.getElementById('app');
       document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
       const target = document.getElementById(`page-${targetId}`);
       if (target) target.classList.add('active');
+      if (appEl) appEl.dataset.page = targetId;
+      const tabsEl = document.getElementById('tabs');
+      if (tabsEl) tabsEl.scrollTop = 0;
       if (btn) {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       } else {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       }
+      if (!fromBack) {
+        if (_pageStack[_pageStack.length - 1] !== targetId) {
+          _pageStack.push(targetId);
+        }
+      }
+    },
+    back() {
+      // 1) بستن مودال‌ها و شیت‌های باز
+      const modals = [
+        ['colorPickerModal', 'active'],
+        ['textModal', 'active'],
+        ['mo-text-modal', 'active'],
+        ['mo-video-modal', 'active']
+      ];
+      for (let i = 0; i < modals.length; i++) {
+        const m = document.getElementById(modals[i][0]);
+        if (m && m.classList.contains(modals[i][1])) {
+          m.classList.remove(modals[i][1]);
+          return 'handled';
+        }
+      }
+      // 2) بستن منوی کشویی (Drawer)
+      const appEl = document.getElementById('app');
+      if (appEl && appEl.classList.contains('drawer-open')) {
+        appEl.classList.remove('drawer-open');
+        return 'handled';
+      }
+      // 3) بازگشت از صفحات داخلی به صفحه اصلی (home)
+      const currentPage = (appEl && appEl.dataset.page) || 'home';
+      if (currentPage !== 'home') {
+        if (_pageStack.length > 1) _pageStack.pop();
+        const prev = _pageStack[_pageStack.length - 1] || 'home';
+        this.to(prev === currentPage ? 'home' : prev, null, true);
+        return 'handled';
+      }
+      return 'exit';
     }
+  };
+  window.EstorioHandleBack = function() {
+    return Nav.back();
   };
 
   const Toast = {
@@ -2476,7 +2520,10 @@ $('#themeBtn').addEventListener('click', e => {
     close(){ app.classList.remove('chat-open'); input.blur(); },
     back(){ window.history.back(); }
   };
-  window.addEventListener('popstate',()=>{ if(app.classList.contains('chat-open')) Chat.close(); });
+  window.addEventListener('popstate',()=>{
+    if(app.classList.contains('chat-open')) Chat.close();
+    if(app.dataset.page && app.dataset.page !== 'home') Nav.to('home', null, true);
+  });
   new MutationObserver(()=>{ const d=document.documentElement.getAttribute('data-theme')==='dark';
     document.getElementById('theme-toggle-btn').checked=d; updateStatusBarColor(d?'#0A1128':'#FAF9F6'); })
     .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
