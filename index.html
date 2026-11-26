@@ -3018,41 +3018,55 @@ function changeBgColor(){
 }
 
 function copyCanvasImage(){
+  render();
   var dataUrl;
-  try { dataUrl = canvas.toDataURL('image/png'); }
-  catch(e){ showToast('ساخت تصویر ناموفق بود'); return; }
+  try {
+    dataUrl = canvas.toDataURL('image/png');
+  } catch(e) {
+    showToast('ساخت تصویر ناموفق بود');
+    return;
+  }
   var A = window.Android;
   var nm = 'storyou_' + Date.now() + '.png';
-  var finished = false, timer = null;
 
-  function useNative(){
-    if (finished) return;
-    if (A && A.copyImage) {
-      try { A.copyImage(dataUrl); finished = true; showToast('تصویر کپی شد!'); return; } catch(e){}
-    }
-    if (A && A.saveImage) {
-      try { A.saveImage(dataUrl.split(',')[1], nm, 'image/png'); finished = true; showToast('در حال ذخیره تصویر…'); return; } catch(e){}
-    }
-    finished = true;
-    webDownload(nm);
+  // ۱) اولویت اول: پل مستقیم اندروید / اسکچوار
+  if (A) {
+    try {
+      if (typeof A.copyImage === 'function') {
+        A.copyImage(dataUrl);
+        return;
+      }
+      if (typeof A.copyImageBase64 === 'function') {
+        A.copyImageBase64(dataUrl);
+        return;
+      }
+      if (typeof A.copyFontImage === 'function') {
+        A.copyFontImage(dataUrl);
+        return;
+      }
+      if (typeof A.saveImage === 'function') {
+        A.saveImage(dataUrl.split(',')[1], nm, 'image/png');
+        showToast('در حال ذخیره تصویر…');
+        return;
+      }
+    } catch(e) {}
   }
 
-  // ۱) کلیپ‌بورد وب (همان مسیری که بدون پل اندروید کار می‌کرد)
-  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
-    timer = setTimeout(useNative, 1500);          // اگر جواب نیامد، مسیر اندروید
+  // ۲) اگر خارج از WebView اندروید باز شده بود: کلیپ‌بورد مرورگر یا دانلود
+  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem && typeof canvas.toBlob === 'function') {
     try {
       canvas.toBlob(function(blob){
-        if (!blob) { clearTimeout(timer); useNative(); return; }
+        if (!blob) { webDownload(nm); return; }
         navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(
-          function(){ clearTimeout(timer); if (!finished) { finished = true; showToast('تصویر کپی شد!'); } },
-          function(){ clearTimeout(timer); useNative(); }
+          function(){ copySuccess(); },
+          function(){ webDownload(nm); }
         );
       }, 'image/png');
-    } catch(e){ clearTimeout(timer); useNative(); }
-  } else {
-    // ۲) متدهای اندروید
-    useNative();
+      return;
+    } catch(e) {}
   }
+
+  webDownload(nm);
 }
 function webDownload(nm){
   try {
