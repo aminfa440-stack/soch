@@ -621,6 +621,13 @@ body{font-weight:400;letter-spacing:0}
 #page-g .mo-t b{font-size:1.1rem;line-height:1.1}
 #page-g .mo-t span{font-size:.66rem;line-height:1.3;font-weight:700}
 #page-g .mo-t.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+/* ===== قالب‌های سفارشی (.storyou) ===== */
+#page-g .mo-t.mo-add{background:var(--bg);color:var(--accent);border:1.5px dashed var(--accent)}
+#page-g .mo-t.mo-add b{font-size:1.15rem}
+#page-g .mo-t.mo-cus{position:relative}
+#page-g .mo-t.mo-cus > span:not(.mo-cus-x){max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#page-g .mo-t .mo-cus-x{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:.62rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:400}
+#page-g .mo-t .mo-cus-x.arm{background:var(--danger)}
 
 #page-g .mo-fcard{min-width:80px;height:78px;border-radius:12px;background:var(--bg);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0;padding:0 8px}
 #page-g .mo-fcard.active{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -3542,6 +3549,43 @@ var MO_FONTS=[
 ['Javan','جوان']
 ];
 
+/* ===== قالب‌های سفارشی — فرمت .storyou (فایل متنی JSON) =====
+   هر فایل: {"format":"storyou-template","version":1,"templates":[{name,bg1,bg2,text,accent,fontFa,fontEn,weight,animation,particles,frame}]}
+   قالب‌ها فقط پارامتر هستند (کد اجرا نمی‌شود)، پس با خیال راحت می‌شود فایل دیگران را هم آپلود کرد. */
+var BUILTIN_N=T.length,CKEY='mo_custom_v1',MAXC=60,MAXF=30,MAXB=262144,CUS=[];
+var CANIM=['fade','rise','pop','blur','slide','zoom','wave','drop','type','float','stamp','flip','spin','shake','glitch','wipe','credits','intro3d'];
+var CPART={none:'0',stars:'s',snow:'n',bubbles:'b',hearts:'h',sparks:'p',lines:'r',dust:'d'};
+['aurora','grid','rain','confetti','bokeh','stripes','waves','comets','matrix','dots','rays','fireflies','petals','vhs','paper','lava','film','ripple','checker','prism','0','s','n','b','h','p','r','d'].forEach(function(k){CPART[k]=k});
+function cHas(o,k){return Object.prototype.hasOwnProperty.call(o,k)}
+function cHex(v,d){return typeof v==='string'&&/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(v.trim())?v.trim().toLowerCase():d}
+function cFont(v,d){return typeof v==='string'&&/^[A-Za-z0-9 _-]{1,40}$/.test(v.trim())?v.trim():d}
+function cNorm(o,k){
+ if(!o||typeof o!=='object'||Array.isArray(o))return null;
+ var nm=String(o.name==null?'':o.name).replace(/[<>&"'`\\\u0000-\u001f]/g,'').trim().slice(0,20)||('قالب '+(k||'سفارشی'));
+ var w=Math.round(+o.weight/100)*100;if(!(w>=300&&w<=900))w=700;
+ var an=String(o.animation==null?'':o.animation).toLowerCase();if(CANIM.indexOf(an)<0)an='fade';
+ var pk=String(o.particles==null?'':o.particles).toLowerCase();
+ var fr=o.frame===true||String(o.frame).toLowerCase()==='vintage';
+ var b1=cHex(o.bg1,'#0f172a');
+ return{name:nm,bg1:b1,bg2:cHex(o.bg2,b1),text:cHex(o.text,'#ffffff'),accent:cHex(o.accent,'#38bdf8'),
+  fontFa:cFont(o.fontFa,'Vazirmatn'),fontEn:cFont(o.fontEn,'Montserrat'),weight:w,animation:an,
+  particles:cHas(CPART,pk)?CPART[pk]:'0',frame:fr,sky1:cHex(o.sky1,'#1d4ed8'),sky2:cHex(o.sky2,'#bfdbfe')};
+}
+function cRow(n){var r=[n.name,n.bg1,n.bg2,n.text,n.accent,n.fontFa,n.fontEn,n.weight,n.animation,n.particles,n.frame?'frame_vintage':0];r.sky=[n.sky1||'#1d4ed8',n.sky2||'#bfdbfe'];return r}
+function cSig(n){return JSON.stringify([n.name,n.bg1,n.bg2,n.text,n.accent,n.fontFa,n.fontEn,n.weight,n.animation,n.particles,n.frame,n.sky1,n.sky2])}
+function cParse(txt){
+ var j;txt=String(txt).replace(/^\uFEFF/,'');
+ try{j=JSON.parse(txt)}catch(e){return{err:'فایل قالب خراب است'}}
+ if(!j||typeof j!=='object'||Array.isArray(j)||j.format!=='storyou-template')return{err:'این فایل، قالب استوریو نیست'};
+ var list=Array.isArray(j.templates)?j.templates:(j.name?[j]:[]);
+ if(!list.length)return{err:'داخل فایل قالبی پیدا نشد'};
+ return{list:list.slice(0,MAXF)};
+}
+function cSave(){try{localStorage.setItem(CKEY,JSON.stringify(CUS))}catch(e){}}
+try{var cr=JSON.parse(localStorage.getItem(CKEY)||'[]');
+ if(Array.isArray(cr))cr.slice(0,MAXC).forEach(function(o){var n=cNorm(o,0);if(n)CUS.push(n)})}catch(e){}
+CUS.forEach(function(n){T.push(cRow(n))});
+
 var RT=/[؀-ۿ]/,R={'9:16':[720,1280],'1:1':[720,720],'4:5':[720,900]};
 var S={i:0,text:'متن مورد نظر خود را بنویسید!',sig:'',ratio:'9:16',speed:1,fscale:1,dur:0,wm:1,font:''};
 try{Object.assign(S,JSON.parse(localStorage.getItem('mo_v2')||'{}'))}catch(e){}
@@ -3634,7 +3678,141 @@ function lay(){
   step=Math.min(.4/S.speed,17/Math.max(N-1,1));D=Math.max(3.2,.5+(N-1)*step+2.2);
  }
  if(S.dur>0){D=S.dur;if(!isCredits)step=Math.min(.4/(S.speed||1),Math.max(.02,(D-2.7)/Math.max(N-1,1)))}
+ if(t[8]==='intro3d'){i3step=Math.min(.4/(S.speed||1),2.6/Math.max(N-1,1));D=Math.max(S.dur>0?S.dur:0,I3T0+Math.max(N-1,0)*i3step+(S.sig?3.2:2.4))}
  if(typeof updDur==='function')updDur();
+}
+
+/* =====================================================================
+   قالب سه‌بعدی «intro3d» — معرفی سینمایی:
+   مدار گرفتن دور سیاره در فضا ← شیرجه به جو ← فلاش ← آسمان و ابرها ← متن سه‌بعدی ← امضا
+   (همه‌چیز با پرسپکتیو واقعی روی بوم دوبعدی؛ رنگ‌ها از پارامترهای قالب می‌آید)
+   ===================================================================== */
+var I3T0=5.6,i3step=.3,I3={st:null,puff:[],cl:null};
+function i3e(p){p=Math.max(0,Math.min(1,p));return p*p*(3-2*p)}
+function i3mix(a,b,k){var p=rgb(a),r=rgb(b);return'rgb('+Math.round(p[0]+(r[0]-p[0])*k)+','+Math.round(p[1]+(r[1]-p[1])*k)+','+Math.round(p[2]+(r[2]-p[2])*k)+')'}
+function i3sh(h,f){var c=rgb(h);return'rgb('+Math.round(c[0]*f)+','+Math.round(c[1]*f)+','+Math.round(c[2]*f)+')'}
+function i3cloud(seed){
+ var cn=document.createElement('canvas');cn.width=640;cn.height=360;var g=cn.getContext('2d'),k,n=8,pf=[];
+ for(k=0;k<n;k++){var u=(k+.5)/n,dm=Math.sin(u*Math.PI);pf.push([70+u*500+(rnd(seed*31+k)-.5)*40,245-dm*(25+rnd(seed*31+k+9)*40),40+dm*(40+rnd(seed*31+k+18)*30)])}
+ function pass(dy,c0,c1,c2){pf.forEach(function(p){var r=g.createRadialGradient(p[0],p[1]+dy,0,p[0],p[1]+dy,p[2]);r.addColorStop(0,c0);r.addColorStop(.62,c1);r.addColorStop(1,c2);g.fillStyle=r;g.beginPath();g.arc(p[0],p[1]+dy,p[2],0,7);g.fill()})}
+ pass(16,'rgba(140,164,218,.7)','rgba(140,164,218,.5)','rgba(140,164,218,0)');
+ pass(0,'rgba(255,255,255,1)','rgba(255,255,255,.93)','rgba(255,255,255,0)');
+ return cn;
+}
+function i3init(){
+ if(I3.st)return;I3.st=[];I3.cl=[];
+ for(var i=0;i<260;i++){var u=rnd(i*3+1)*6.2832,v=rnd(i*3+2)*2-1,r=900+rnd(i*3+3)*2600,s=Math.sqrt(1-v*v);I3.st.push([r*s*Math.cos(u),r*v,r*s*Math.sin(u),rnd(i+500)])}
+ for(var c=0;c<24;c++)I3.cl.push({x:(rnd(c*7+3)-.5)*3400,y:(rnd(c*7+4)-.5)*1900,z:rnd(c*7+5)*3000,s:c%8});
+ for(var q8=0;q8<8;q8++)I3.puff[q8]=i3cloud(q8+1);
+}
+/* دوربین مداری؛ u = پیشرفت شیرجه (۰ تا ۱) */
+function i3cam(t){
+ var u=Math.max(0,Math.min(1,(t-3.2)/1.7)),u2=u*u,th=.5+t*.62+u2*2.2,ph=.28+.22*Math.sin(t*.55)-.12*u2,
+ d=t<3.2?700-t*38:578-(578-160)*Math.pow(u,2.2),
+ cx=d*Math.sin(th)*Math.cos(ph),cy=d*Math.sin(ph),cz=d*Math.cos(th)*Math.cos(ph),
+ fx=-cx/d,fy=-cy/d,fz=-cz/d,rx=-fz,rz=fx,rl=Math.sqrt(rx*rx+rz*rz)||1;rx/=rl;rz/=rl;
+ var ry=0,ux=ry*fz-rz*fy,uy=rz*fx-rx*fz,uz=rx*fy-ry*fx,ro=.16*Math.sin(t*.8)+u2*.9;
+ return{x:cx,y:cy,z:cz,fx:fx,fy:fy,fz:fz,rx:rx,ry:ry,rz:rz,ux:ux,uy:uy,uz:uz,c:Math.cos(ro),s:Math.sin(ro),u:u,d:d,th:th};
+}
+function i3p(c,px,py,pz,fl){
+ var dx=px-c.x,dy=py-c.y,dz=pz-c.z,X=dx*c.rx+dy*c.ry+dz*c.rz,Y=dx*c.ux+dy*c.uy+dz*c.uz,Z=dx*c.fx+dy*c.fy+dz*c.fz,
+ X2=X*c.c-Y*c.s,Y2=X*c.s+Y*c.c,z=Math.max(Z,1);
+ return[W/2+X2*fl/z,H/2-Y2*fl/z,Z];
+}
+function i3space(t,q){
+ var c=i3cam(t),u=c.u,u2=u*u,fl=W*1.0,R0=150,i,k,a,p0,p1,pc,rs,g;
+ g=x.createLinearGradient(0,0,W*.5,H);g.addColorStop(0,q[1]);g.addColorStop(1,q[2]);x.fillStyle=g;x.fillRect(0,0,W,H);
+ /* سحابی */
+ for(k=0;k<3;k++){var nx=W*(.5+.42*Math.sin(c.th*.7+k*2.1)),ny=H*(.5+.3*Math.cos(c.th*.55+k*1.7)),nr=W*(.75+.15*k),cc=k==1?'#7c3aed':(k==2?'#ec4899':q[4]);
+  g=x.createRadialGradient(nx,ny,0,nx,ny,nr);g.addColorStop(0,rgba(cc,.26));g.addColorStop(1,rgba(cc,0));x.fillStyle=g;x.fillRect(0,0,W,H)}
+ /* ستاره‌ها (با دنبالهٔ حرکت) */
+ var cp=i3cam(Math.max(0,t-.05)),m=1+7*u2;x.lineCap='round';
+ for(i=0;i<I3.st.length;i++){var s=I3.st[i];p1=i3p(c,s[0],s[1],s[2],fl);if(p1[2]<20)continue;p0=i3p(cp,s[0],s[1],s[2],fl);
+  var ax=p1[0]+(p0[0]-p1[0])*m,ay=p1[1]+(p0[1]-p1[1])*m;if(p1[0]<-W||p1[0]>2*W||p1[1]<-H||p1[1]>2*H)continue;
+  x.strokeStyle=rgba(i%5?'#ffffff':q[4],.3+.7*Math.abs(Math.sin(t*1.7+i)));x.lineWidth=.8+s[3]*2.2;
+  x.beginPath();x.moveTo(p1[0],p1[1]);x.lineTo(ax,ay+.01);x.stroke()}
+ /* سیاره */
+ pc=i3p(c,0,0,0,fl);var Zc=pc[2],pz=Math.max(Zc*Zc-R0*R0,R0*R0*.09);rs=fl*R0/Math.sqrt(pz);
+ var L=[-.6,.35,.7],lx0=L[0]*c.rx+L[1]*c.ry+L[2]*c.rz,ly0=L[0]*c.ux+L[1]*c.uy+L[2]*c.uz,lx=lx0*c.c-ly0*c.s,ly=lx0*c.s+ly0*c.c;
+ function ring(front){
+  for(var rr=1.75;rr<=2.5;rr+=.15){x.strokeStyle=rgba('#ffffff',.14+.16*Math.abs(Math.sin(rr*9)));x.lineWidth=Math.max(1,fl*R0*.07/Math.max(Zc,60));
+   x.beginPath();var pen=false,prev=null;
+   for(a=0;a<=72;a++){var al=a/72*6.2832,qx=rr*R0*Math.cos(al),qz=rr*R0*Math.sin(al),yy=-qz*Math.sin(.45),zz=qz*Math.cos(.45),
+    wx=qx*Math.cos(.2)-yy*Math.sin(.2),wy=qx*Math.sin(.2)+yy*Math.cos(.2),pp=i3p(c,wx,wy,zz,fl),isF=pp[2]<Zc;
+    if(pp[2]>8&&isF===front&&prev){if(!pen){x.moveTo(prev[0],prev[1]);pen=true}x.lineTo(pp[0],pp[1])}else pen=false;prev=pp[2]>8?pp:null}
+   x.stroke()}
+ }
+ function moon(front){
+  var mm=t*1.1+1,mp=i3p(c,Math.cos(mm)*340,Math.sin(mm*.7)*60,Math.sin(mm)*340,fl);
+  if(mp[2]<20||(mp[2]<Zc)!==front)return;var mr=26*fl/mp[2],gg=x.createRadialGradient(mp[0]+lx*mr*.4,mp[1]-ly*mr*.4,mr*.1,mp[0],mp[1],mr*1.1);
+  gg.addColorStop(0,'#f1f5f9');gg.addColorStop(.6,'#94a3b8');gg.addColorStop(1,'#1e293b');x.fillStyle=gg;x.beginPath();x.arc(mp[0],mp[1],mr,0,7);x.fill()}
+ ring(false);moon(false);
+ if(Zc>8){
+  x.globalCompositeOperation='lighter';g=x.createRadialGradient(pc[0],pc[1],rs*.9,pc[0],pc[1],rs*1.32);
+  g.addColorStop(0,rgba(q[4],.55));g.addColorStop(1,rgba(q[4],0));x.fillStyle=g;x.beginPath();x.arc(pc[0],pc[1],rs*1.32,0,7);x.fill();x.globalCompositeOperation='source-over';
+  x.save();x.beginPath();x.arc(pc[0],pc[1],rs,0,7);x.clip();
+  g=x.createRadialGradient(pc[0]+lx*rs*.5,pc[1]-ly*rs*.5,rs*.05,pc[0]+lx*rs*.2,pc[1]-ly*rs*.2,rs*1.3);
+  g.addColorStop(0,i3mix(q[4],'#ffffff',.55));g.addColorStop(.42,i3sh(q[4],.78));g.addColorStop(.85,i3sh(q[4],.22));g.addColorStop(1,i3sh(q[4],.05));
+  x.fillStyle=g;x.fillRect(pc[0]-rs,pc[1]-rs,rs*2,rs*2);
+  x.translate(pc[0],pc[1]);x.rotate(-Math.atan2(c.s,c.c)-.3);
+  for(k=-3;k<=3;k++){x.fillStyle=k%2?'rgba(255,255,255,.07)':'rgba(0,0,40,.10)';x.fillRect(-rs,k*rs*.27-rs*.07,rs*2,rs*.14)}
+  x.restore();
+ }
+ ring(true);moon(true);
+ /* خطوط سرعت هنگام شیرجه */
+ if(u>.05){x.lineWidth=2;for(i=0;i<70;i++){var an=rnd(i)*6.2832,r0=((rnd(i+9)+t*1.7)%1)*W*.9+W*.05,ln=(.05+rnd(i+4)*.5)*W*u2;
+  x.strokeStyle='rgba(255,255,255,'+(.1+.5*u2)+')';x.beginPath();x.moveTo(W/2+Math.cos(an)*r0,H/2+Math.sin(an)*r0);x.lineTo(W/2+Math.cos(an)*(r0+ln),H/2+Math.sin(an)*(r0+ln));x.stroke()}}
+ if(u>.55){var ga=i3e((u-.55)/.45)*.9;g=x.createRadialGradient(W/2,H/2,0,W/2,H/2,H*.7);g.addColorStop(0,'rgba(255,255,255,'+ga+')');g.addColorStop(.45,rgba(q[4],ga*.75));g.addColorStop(1,rgba(q[4],0));x.fillStyle=g;x.fillRect(0,0,W,H)}
+}
+function i3sky(t,q){
+ var ts=Math.max(0,t-4.9),sk=q.sky||['#1d4ed8','#bfdbfe'],fl=W*1.0,i,k,g;
+ g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+ /* خورشید و پرتوها */
+ var sx=W*.82,sy=H*.13;g=x.createRadialGradient(sx,sy,0,sx,sy,W*1.05);g.addColorStop(0,'rgba(255,248,214,.95)');g.addColorStop(.18,'rgba(255,226,150,.42)');g.addColorStop(1,'rgba(255,226,150,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.save();x.translate(sx,sy);x.rotate(t*.08);x.fillStyle='rgba(255,255,255,.07)';for(i=0;i<12;i++){var aa=i*Math.PI/6;x.beginPath();x.moveTo(0,0);x.arc(0,0,H*1.3,aa,aa+Math.PI/17);x.closePath();x.fill()}x.restore();
+ /* ابرها: دوربین ابتدا با سرعت زیاد می‌گذرد و بعد آرام می‌شود */
+ var v0=3600,v1=110,kk=2.2,camZ=v1*ts+(v0-v1)/kk*(1-Math.exp(-kk*ts)),ZL=3000,near=60,arr=[];
+ for(i=0;i<I3.cl.length;i++){var cl=I3.cl[i],zz=(((cl.z-camZ)%ZL)+ZL)%ZL+near;arr.push([zz,cl])}
+ arr.sort(function(a,b){return b[0]-a[0]});
+ for(i=0;i<arr.length;i++){var z=arr[i][0],cl=arr[i][1],al=Math.min(1,(ZL+near-z)/600)*Math.min(1,(z-near)/260),sw=Math.sin(t*.3+i)*30;if(al<=.01)continue;
+  var sz=1100*fl/z,sh=sz*360/640,px=W/2+(cl.x+sw)*fl/z,py=H/2-cl.y*fl/z;if(px<-sz||px>W+sz||py<-sh||py>H+sh)continue;
+  x.globalAlpha=al*.95;x.drawImage(I3.puff[cl.s],px-sz/2,py-sh/2,sz,sh)}
+ x.globalAlpha=1;
+}
+function frame3d(q,t){
+ x.save();i3init();
+ if(t<4.9)i3space(t,q);else i3sky(t,q);
+ var fh=t<4.4?0:(t<4.9?i3e((t-4.4)/.5):Math.max(0,1-(t-4.9)/1.0));
+ if(fh>0){x.fillStyle='rgba(255,255,255,'+fh+')';x.fillRect(0,0,W,H)}
+ var tt=I3T0,k0=i3e((t-tt+.3)/1.1);
+ if(k0>0){var g=x.createRadialGradient(W/2,H/2,0,W/2,H/2,W*.95);g.addColorStop(0,'rgba(6,24,88,'+(.3*k0)+')');g.addColorStop(1,'rgba(6,24,88,0)');x.fillStyle=g;x.fillRect(0,0,W,H)}
+ x.font=fnt;x.direction=rtl?'rtl':'ltr';x.textAlign='center';x.textBaseline='middle';
+ var depth=size*.115,L=7,exc=q[4];
+ x.save();x.translate(W/2,H/2);x.scale(1.14,1.14);x.translate(-W/2,-H/2);
+ words.forEach(function(w){
+  var p=Math.min(1,Math.max(0,(t-(tt+w.i*i3step))/.95));if(p<=0)return;
+  var e=ease(p),cb=p-1,b=1+2.70158*cb*cb*cb+1.70158*cb*cb,sc=.1+.9*b,sx=Math.max(.05,Math.abs(Math.cos((1-e)*1.25))),
+  px=W/2+(w.x-W/2)*e,py=H*.44+(w.y-H*.44)*e+Math.sin(t*1.5+w.i*.55)*6*e,rot=(1-e)*(w.i%2?-.4:.4)+Math.sin(t*.9+w.i)*.012;
+  x.save();x.translate(px,py);x.rotate(rot);x.scale(sc*sx,sc);x.globalAlpha=Math.min(1,p*3);
+  if(e<.96){x.save();x.globalAlpha=Math.min(1,p*3)*.3*(1-e);x.fillStyle=q[3];x.fillText(w.s,0,-(1-e)*size*.55);x.restore()}
+  for(var k=L;k>=1;k--){x.fillStyle=i3sh(exc,.2+.2*(L-k)/L);x.fillText(w.s,-k*depth/L*.7,k*depth/L)}
+  x.lineJoin='round';x.lineWidth=size*.16;x.strokeStyle=rgba(exc,.28);x.strokeText(w.s,0,0);x.fillStyle=q[3];x.fillText(w.s,0,0);x.restore()});
+ x.globalAlpha=1;
+ /* امضا: خط نورانی + نوشته‌ی «کشیده‌شونده» زیر متن */
+ var ts=tt+Math.max(N-1,0)*i3step+.85;
+ if(S.sig&&t>ts){
+  var ps=Math.min(1,(t-ts)/1.1),es=i3e(ps),fm='500 '+Math.round(size*.55)+'px "'+getActiveFont(q)+'",Vazirmatn,sans-serif',ly=sigY-size*.5;
+  x.save();x.lineCap='round';x.strokeStyle=rgba(exc,.3);x.lineWidth=9;var hw0=W*.15*es;x.beginPath();x.moveTo(W/2-hw0,ly);x.lineTo(W/2+hw0,ly);x.stroke();x.strokeStyle=rgba('#ffffff',.95);x.lineWidth=3;
+  var hw=W*.15*es;x.beginPath();x.moveTo(W/2-hw,ly);x.lineTo(W/2+hw,ly);x.stroke();x.restore();
+  x.save();x.font=fm;x.fillStyle=q[3];x.shadowColor='rgba(6,24,88,.7)';x.shadowOffsetX=-2;x.shadowOffsetY=3;
+  var tx='— '+S.sig,ww=x.measureText(tx).width+12;
+  x.beginPath();x.rect(rtl?ww/2-ww*es+W/2:W/2-ww/2,sigY-size,ww*es,size*2);x.clip();
+  x.globalAlpha=Math.min(1,ps*2.5);x.fillText(tx,W/2,sigY+(1-es)*8);x.restore()}
+ x.restore();
+ var vg=x.createRadialGradient(W/2,H/2,W*.45,W/2,H/2,H*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,'+(.28*(1-fh))+')');x.fillStyle=vg;x.fillRect(0,0,W,H);
+ if(q[10]==='frame_vintage')drawVintageFrame(q);
+ if(S.wm){x.globalAlpha=.55;x.fillStyle=q[3];x.font='600 '+Math.round(W*.03)+'px Vazirmatn,sans-serif';x.fillText('storyou_application',W/2,H-42);x.globalAlpha=1}
+ x.restore();
 }
 
 var NB={
@@ -3677,6 +3855,7 @@ function parts(t,q){var p=q[9];if(p==='0')return;
 
 function frame(t){
  var q=T[S.i];x.font=fnt;x.direction=rtl?'rtl':'ltr';x.textAlign='center';x.textBaseline='middle';x.globalAlpha=1;
+ if(q[8]==='intro3d'){frame3d(q,t);return}
  var g=x.createLinearGradient(0,0,W*.5,H);g.addColorStop(0,q[1]);g.addColorStop(1,q[2]);x.fillStyle=g;x.fillRect(0,0,W,H);
  for(var k=0;k<2;k++){var cx=W*(.5+.45*Math.sin(t*.35+k*3)),cy=H*(.5+.4*Math.cos(t*.27+k*2)),rg=x.createRadialGradient(cx,cy,0,cx,cy,W*.9);
   rg.addColorStop(0,rgba(q[4],.3));rg.addColorStop(1,rgba(q[4],0));x.fillStyle=rg;x.fillRect(0,0,W,H)}
@@ -3758,6 +3937,70 @@ T.forEach(function(q,i){var b=document.createElement('button');b.type='button';b
  b.style.background='linear-gradient(160deg,'+q[1]+','+q[2]+')';b.style.color=q[3];
  b.innerHTML='<b style="font-family:\''+q[5]+'\',sans-serif;color:'+q[4]+'">سلام</b><span>'+q[0]+'</span>';
  b.onclick=function(){pick(i)};tpl.appendChild(b);tb.push(b)});
+
+/* ===== دکمهٔ «افزودن قالب» و کارت قالب‌های سفارشی ===== */
+var addBtn=document.createElement('button');addBtn.type='button';addBtn.className='mo-t mo-add';
+addBtn.setAttribute('aria-label','افزودن قالب');
+addBtn.innerHTML='<b><i class="fa-solid fa-plus"></i></b><span>افزودن قالب</span>';
+tpl.insertBefore(addBtn,tpl.firstChild);
+var cFile=document.createElement('input');cFile.type='file';cFile.style.display='none';
+$('page-g').appendChild(cFile);
+addBtn.onclick=function(){cFile.click()};
+
+function cDark(h){var c=rgb(h);return c[0]*.3+c[1]*.59+c[2]*.11<110}
+function cMake(q){
+ var b=document.createElement('button');b.type='button';b.className='mo-t mo-cus';
+ b.style.background='linear-gradient(160deg,'+q[1]+','+q[2]+')';b.style.color=q[3];
+ var s1=document.createElement('b');s1.style.fontFamily="'"+q[5]+"',sans-serif";s1.style.color=q[4];s1.textContent='سلام';
+ var s2=document.createElement('span');s2.textContent=q[0];
+ var x=document.createElement('span');x.className='mo-cus-x';x.setAttribute('role','button');x.setAttribute('aria-label','حذف قالب');
+ x.innerHTML='<i class="fa-solid fa-xmark"></i>';
+ b.appendChild(s1);b.appendChild(s2);b.appendChild(x);
+ b.onclick=function(){pick(tb.indexOf(b))};
+ x.onclick=function(e){e.stopPropagation();e.preventDefault();
+  if(!x.classList.contains('arm')){x.classList.add('arm');toast('برای حذف قالب، دوباره روی ✕ بزنید');
+   setTimeout(function(){x.classList.remove('arm')},3000);return}
+  cDel(b)};
+ return b;
+}
+function cDel(card){
+ var idx=tb.indexOf(card);if(idx<BUILTIN_N)return;
+ T.splice(idx,1);tb.splice(idx,1);CUS.splice(idx-BUILTIN_N,1);
+ if(card.parentNode)card.parentNode.removeChild(card);
+ cSave();
+ if(S.i===idx)S.i=0;else if(S.i>idx)S.i--;
+ pick(S.i,1);toast('قالب حذف شد');
+}
+/* کارت‌های ذخیره‌شده را (که کد اصلی آخر لیست ساخته) با کارت امن جایگزین و بعد از دکمهٔ افزودن می‌چینیم */
+for(var ci=0;ci<CUS.length;ci++){
+ var oldC=tb[BUILTIN_N+ci],newC=cMake(T[BUILTIN_N+ci]);
+ if(oldC&&oldC.parentNode)oldC.parentNode.removeChild(oldC);
+ tb[BUILTIN_N+ci]=newC;tpl.insertBefore(newC,addBtn.nextSibling);
+}
+function cAdd(list){
+ var ok=[],dup=0,bad=0;
+ list.forEach(function(o,k){
+  var n=cNorm(o,k+1);if(!n){bad++;return}
+  var sg=cSig(n);
+  if(CUS.some(function(c){return cSig(c)===sg})){dup++;return}
+  if(CUS.length>=MAXC){bad++;return}
+  var row=cRow(n);row.push(cDark(row[1]));
+  CUS.push(n);T.push(row);
+  var card=cMake(row);tb.push(card);tpl.insertBefore(card,addBtn.nextSibling);ok.push(n.name);
+ });
+ if(ok.length){cSave();pick(T.length-1);
+  toast(ok.length===1?('قالب «'+ok[0]+'» اضافه شد ✓'):(fa(ok.length)+' قالب اضافه شد ✓'))}
+ else if(dup)toast('این قالب قبلاً اضافه شده است');
+ else toast('قالب معتبری در فایل پیدا نشد');
+}
+cFile.onchange=function(){
+ var f=cFile.files&&cFile.files[0];if(!f)return;
+ if(f.size>MAXB){toast('فایل قالب بیش از حد بزرگ است');cFile.value='';return}
+ var r=new FileReader();
+ r.onload=function(){cFile.value='';var p=cParse(r.result);if(p.err){toast(p.err);return}cAdd(p.list)};
+ r.onerror=function(){cFile.value='';toast('خواندن فایل ناموفق بود')};
+ r.readAsText(f,'utf-8');
+};
 
 function pick(i,noScroll){S.i=i;tb.forEach(function(b,k){b.classList.toggle('on',k===i)});
  if(!noScroll)tb[i].scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});sync()}
